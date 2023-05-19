@@ -1,0 +1,70 @@
+version: "3"
+services:
+  mopidy:
+    image: docker.io/sweisgerber/mopidy:alpine
+    hostname: mopidy
+    environment:
+      - PUID=1000 # user ID which the mopidy service will run as, needs permissions to access the music
+      - PGID=1000 # group ID which the mopidy service will run as, needs permissions to access the music
+      - TZ=Europe/Berlin
+      #
+      # https://github.com/linuxserver/docker-mods/tree/universal-package-install
+      #
+      # Set alpine or pip package ENV vars for further mopidy extensions
+      #
+      - DOCKER_MODS=linuxserver/mods:universal-package-install
+      - INSTALL_PIP_PACKAGES=Mopidy-Beets|Mopidy-dLeyna|Mopidy-InternetArchive|Mopidy-TuneIn|Mopidy-YTMusic
+      # - INSTALL_PACKAGES=mopidy-podcast
+    restart: "unless-stopped"
+    ports:
+      - 6600:6600 # Remote Control port for MPD
+      - 6680:6680 # HTML API & Webinterface port for accessing mopidy
+    # devices:
+    # - /dev/snd:/dev/snd # optional, needed if you want to play to host audio devices.
+    volumes:
+      - $MOPIROOM_FOLDER/config/:/config/
+      # contains mopidy configured FIFO location,
+      # check mopidy.conf <https://github.com/sweisgerber/docker-mopidy/blob/main/root/defaults/mopidy.conf>
+      # will get used by snapcast and streamed to the network.
+      #
+      # ```conf
+      # [audio]
+      # output = (...) location=/data/audio/snapcast_fifo
+      # ```
+      #
+      # mopidy--FIFO-in-FileSystem-->SnapServer--LAN-Stream-->SnapClient
+      #
+      - $MOPIROOM_FOLDER/data/:/data/
+      - $MOPIROOM_FOLDER/:/music/:ro # READ-ONLY & optional  (needed if you want to play audio files from host)
+  #
+  # One should use snapcast along mopidy/iris
+  #
+  snapcast:
+    image: docker.io/sweisgerber/snapcast:latest
+    hostname: snapcast
+    environment:
+      - PUID=1000 # user ID which the mopidy service will run as, needs permissions to access the music
+      - PGID=1000 # group ID which the mopidy service will run as, needs permissions to access the music
+      - TZ=Europe/Berlin
+      # skip optional parts if you don't want to use snapclient service and just use the browser snapclient
+      # players in mopidy-iris or snapweb
+      - HOST_AUDIO_GROUP=996 # optional
+      - START_SNAPCLIENT=false  # optional
+      # ! Don't use quotes for SNAPCLIENT_OPTS="" !
+      - SNAPCLIENT_OPTS=--host snapcast --soundcard <ID>
+    restart: "unless-stopped"
+    ports:
+      - 1704:1704 # port for the actual audio streaming
+      - 1705:1705 # port for TCP Json RPC
+      - 1780:1780 # port for the SnapWeb Webinterface
+    devices:
+      - /dev/snd:/dev/snd # optional, does not get used unless you set `START_SNAPCLIENT=true`
+    volumes:
+      - $MOPIROOM_FOLDER/snapcast/config/:/config/
+      - $MOPIROOM_FOLDER/snapcast/data/:/data/
+      # mopidy configured FIFO location,
+      # check mopidy.conf <https://github.com/sweisgerber/docker-mopidy/blob/main/root/defaults/mopidy.conf>
+      #
+      # mopidy--FIFO-in-FileSystem-->SnapServer--LAN-Stream-->SnapClient
+      #
+      - $MOPIROOM_FOLDER/data/audio/:/audio/
