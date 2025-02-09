@@ -1,7 +1,7 @@
 version: "3"
 services:
   mopidy:
-    image: docker.io/sweisgerber/mopidy:alpine
+    image: docker.io/sweisgerber/mopidy:v3.4 # user versions
     hostname: mopidy
     environment:
       - PUID=1000 # user ID which the mopidy service will run as, needs permissions to access the music
@@ -40,7 +40,7 @@ services:
   # One should use snapcast along mopidy/iris
   #
   snapcast:
-    image: docker.io/sweisgerber/snapcast:latest
+    image: docker.io/sweisgerber/snapcast:v0.31 # user versions
     hostname: snapcast
     environment:
       - PUID=1000 # user ID which the mopidy service will run as, needs permissions to access the music
