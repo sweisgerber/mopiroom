@@ -57,6 +57,7 @@ services:
       - 1704:1704 # port for the actual audio streaming
       - 1705:1705 # port for TCP Json RPC
       - 1780:1780 # port for the SnapWeb Webinterface
+      - 22382:22382 # port for spotify/librespot
     devices:
       - /dev/snd:/dev/snd # optional, does not get used unless you set `START_SNAPCLIENT=true`
     volumes:
